@@ -1,16 +1,11 @@
-# image_video_picker
+# Universal Media Picker
 
-A new Flutter project.
+A Flutter project to **select images, videos, or PDFs from the device’s shared storage and display them in the app**.
 
-## Getting Started
+## Features
+- 📷 Pick images from device storage
+- 🎥 Pick videos from device storage
+- 📄 Pick PDF files from device storage
+- 👀 Display selected files directly in the app
 
-This project is a starting point for a Flutter application.
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
