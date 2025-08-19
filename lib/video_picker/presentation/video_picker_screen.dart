@@ -110,50 +110,64 @@ class VideoPickerScreen extends StatelessWidget {
       alignment: Alignment.center,
       children: [
         AspectRatio(
-          aspectRatio: videoController.value.aspectRatio,
-          child: VideoPlayer(videoController),
+          aspectRatio: videoController.value.aspectRatio > 0
+              ? videoController.value.aspectRatio
+              : 16 / 9,
+
+          child: GestureDetector(
+            onTap: controller.toggleControls,
+            child: VideoPlayer(videoController),
+          ),
         ),
 
         // play pause button (center)
-        GetBuilder<MyVideoController>(
-          builder: (controller) {
-            return IconButton(
-              color: Colors.blueAccent,
-              iconSize: 48,
-              onPressed: controller.playPauseVideo,
-              icon: AnimatedIcon(
-                icon: AnimatedIcons.play_pause,
-                progress: controller.animatedIconController,
-                color: Colors.white,
-              ),
-            );
-          },
+        Obx(
+          () => !controller.showControls.value
+              ? const SizedBox.shrink()
+              : IconButton(
+                  color: Colors.blueAccent,
+                  iconSize: 48,
+                  onPressed: controller.playPauseVideo,
+                  icon: AnimatedIcon(
+                    icon: AnimatedIcons.play_pause,
+                    progress: controller.animatedIconController,
+                    color: Colors.white,
+                  ),
+                ),
         ),
 
         // move backward 5 sec
-        Positioned(
-          left: 10,
-          child: IconButton(
-            color: Colors.white,
-            onPressed: () => controller.moveForwardBackward(
-              direction: VideoMovementDirection.backward,
-              autoPlay: true,
-            ),
-            icon: const Icon(Icons.keyboard_double_arrow_left),
-          ),
+        Obx(
+          () => !controller.showControls.value
+              ? const SizedBox.shrink()
+              : Positioned(
+                  left: 10,
+                  child: IconButton(
+                    color: Colors.white,
+                    onPressed: () => controller.moveForwardBackward(
+                      direction: VideoMovementDirection.backward,
+                      autoPlay: true,
+                    ),
+                    icon: const Icon(Icons.keyboard_double_arrow_left),
+                  ),
+                ),
         ),
 
         // move forward 5 sec
-        Positioned(
-          right: 10,
-          child: IconButton(
-            color: Colors.white,
-            onPressed: () => controller.moveForwardBackward(
-              direction: VideoMovementDirection.forward,
-              autoPlay: true,
-            ),
-            icon: const Icon(Icons.keyboard_double_arrow_right),
-          ),
+        Obx(
+          () => !controller.showControls.value
+              ? const SizedBox.shrink()
+              : Positioned(
+                  right: 10,
+                  child: IconButton(
+                    color: Colors.white,
+                    onPressed: () => controller.moveForwardBackward(
+                      direction: VideoMovementDirection.forward,
+                      autoPlay: true,
+                    ),
+                    icon: const Icon(Icons.keyboard_double_arrow_right),
+                  ),
+                ),
         ),
 
         // progress bar (fix value scaling 0-1)
@@ -163,53 +177,63 @@ class VideoPickerScreen extends StatelessWidget {
               controller.myVideoPlayerController?.value.duration ??
               Duration.zero;
 
-          return Positioned(
-            bottom: 10,
-            left: 2,
-            right: 2,
-            // if i just remove right position from here than i am not able to click any button
-            // and bwlow row is not visible why
-            child: Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
+          return !controller.showControls.value
+              ? const SizedBox.shrink()
+              : Positioned(
+                  bottom: 10,
+                  left: 2,
+                  right: 2,
+
+                  child: Row(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          controller.formatDuration(
+                            controller.videoCurrentPosition.value,
+                          ),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ),
+
+                      Flexible(
+                        child: Slider(
+                          activeColor: Colors.blue,
+                          inactiveColor: Colors.blue.withValues(alpha: 0.33),
+
+                          value: currentPosition.inSeconds.toDouble().clamp(
+                            0,
+                            totalDuration.inSeconds.toDouble(),
+                          ),
+                          onChanged: (pos) {
+                            controller.moveVideoToPosition(pos: pos.toInt());
+                          },
+
+                          max: totalDuration.inSeconds.toDouble(),
+                          min: 0,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+        }),
+
+        Obx(
+          () => !controller.showControls.value
+              ? const SizedBox.shrink()
+              : Positioned(
+                  right: 10,
+                  top: 10,
                   child: Text(
                     controller.formatDuration(
-                      controller.videoCurrentPosition.value,
+                      controller.myVideoPlayerController!.value.duration,
                     ),
                     style: const TextStyle(fontSize: 16, color: Colors.blue),
                   ),
                 ),
-
-                Flexible(
-                  child: Slider(
-                    value: currentPosition.inSeconds.toDouble().clamp(
-                      0,
-                      totalDuration.inSeconds.toDouble(),
-                    ),
-                    onChanged: (pos) {
-                      controller.moveVideoToPosition(pos: pos.toInt());
-                    },
-
-                    max: totalDuration.inSeconds.toDouble(),
-                    min: 0,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-
-        // current position
-        Positioned(
-          right: 10,
-          top: 10,
-          child: Text(
-            controller.formatDuration(
-              controller.myVideoPlayerController!.value.duration,
-            ),
-            style: const TextStyle(fontSize: 16, color: Colors.blue),
-          ),
         ),
       ],
     );

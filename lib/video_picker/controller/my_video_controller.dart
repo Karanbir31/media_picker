@@ -15,6 +15,8 @@ class MyVideoController extends GetxController
   late AnimationController animatedIconController;
   VideoPlayerController? myVideoPlayerController;
 
+  RxBool showControls = true.obs;
+
   bool hasCompleted = false;
 
   @override
@@ -132,10 +134,9 @@ class MyVideoController extends GetxController
 
   String formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, "0");
-    final hours = duration.inHours;
     final minutes = twoDigits(duration.inMinutes.remainder(60));
     final seconds = twoDigits(duration.inSeconds.remainder(60));
-    return hours > 0 ? "$hours:$minutes:$seconds" : "$minutes:$seconds";
+    return "$minutes:$seconds";
   }
 
   void moveVideoToPosition({required int pos}) {
@@ -145,5 +146,15 @@ class MyVideoController extends GetxController
     final maxSeconds = controller.value.duration.inSeconds;
     final safePos = pos.clamp(0, maxSeconds);
     controller.seekTo(Duration(seconds: safePos));
+  }
+
+  void toggleControls() {
+    showControls.value = !showControls.value;
+
+    if (showControls.value) {
+      Future.delayed(const Duration(seconds: 3), () {
+        if (showControls.value) showControls.value = false;
+      });
+    }
   }
 }
