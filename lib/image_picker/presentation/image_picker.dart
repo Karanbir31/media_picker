@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../video_picker/presentation/video_picker_screen.dart';
+
 class ImagePickerScreen extends StatefulWidget {
   const ImagePickerScreen({super.key});
 
@@ -12,7 +14,7 @@ class ImagePickerScreen extends StatefulWidget {
 }
 
 class _ImagePickerState extends State<ImagePickerScreen> {
-  File? galleryFile;
+  File? galleryImageFile;
   final imagePicker = ImagePicker();
 
   @override
@@ -24,6 +26,15 @@ class _ImagePickerState extends State<ImagePickerScreen> {
         title: Text("Image picker"),
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
+
+        actions: [
+          IconButton(
+            onPressed: () {
+              Get.to(VideoPickerScreen());
+            },
+            icon: Icon(Icons.play_circle_outline),
+          ),
+        ],
       ),
 
       body: SafeArea(
@@ -33,41 +44,62 @@ class _ImagePickerState extends State<ImagePickerScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
 
             children: [
-              MaterialButton(
-                clipBehavior: Clip.hardEdge,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: Colors.grey),
-                ),
+              const SizedBox(height: 20),
 
-                onPressed: () {
-                  myImagePicker(source: ImageSource.gallery);
-                },
-                child: Text("From Gallery"),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                  children: [
+                    Flexible(
+                      child: Text(
+                        "Pick Image: ",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+
+                    MaterialButton(
+                      clipBehavior: Clip.hardEdge,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.grey),
+                      ),
+
+                      onPressed: () {
+                        myImagePicker(source: ImageSource.gallery);
+                      },
+                      child: Text("From Gallery"),
+                    ),
+
+                    MaterialButton(
+                      clipBehavior: Clip.hardEdge,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.grey),
+                      ),
+
+                      onPressed: () {
+                        myImagePicker(source: ImageSource.camera);
+                      },
+                      child: Text("From Camera"),
+                    ),
+                  ],
+                ),
               ),
 
               const SizedBox(height: 20),
 
-              MaterialButton(
-                clipBehavior: Clip.hardEdge,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: Colors.grey),
-                ),
-
-                onPressed: () {
-                  myImagePicker(source: ImageSource.camera);
-                },
-                child: Text("From Camera"),
-              ),
-
-              const SizedBox(height: 20),
-              SizedBox(
-                height: 200.0,
-                width: 300.0,
-                child: galleryFile == null
+              Flexible(
+                child: galleryImageFile == null
                     ? const Center(child: Text('Sorry nothing selected!!'))
-                    : Center(child: Image.file(galleryFile!)),
+                    : FractionallySizedBox(
+                        widthFactor: 0.9,
+                        child: Image.file(galleryImageFile!),
+                      ),
               ),
             ],
           ),
@@ -79,11 +111,18 @@ class _ImagePickerState extends State<ImagePickerScreen> {
   void myImagePicker({required ImageSource source}) async {
     final pickedFile = await imagePicker.pickImage(source: source);
     if (pickedFile == null) {
-      Get.snackbar("error", "please select a valid image");
+      Get.snackbar(
+        "Null",
+        "please select a valid image",
+        backgroundColor: Colors.red[100],
+        snackPosition: SnackPosition.BOTTOM,
+        margin: EdgeInsets.all(16),
+      );
+
       return;
     } else {
       setState(() {
-        galleryFile = File(pickedFile.path);
+        galleryImageFile = File(pickedFile.path);
       });
     }
   }
