@@ -157,11 +157,18 @@ class VideoPickerScreen extends StatelessWidget {
         ),
 
         // progress bar (fix value scaling 0-1)
-        Obx(
-          () => Positioned(
+        Obx(() {
+          final currentPosition = controller.videoCurrentPosition.value;
+          final totalDuration =
+              controller.myVideoPlayerController?.value.duration ??
+              Duration.zero;
+
+          return Positioned(
             bottom: 10,
-            left: 10,
-            right: 10,
+            left: 2,
+            right: 2,
+            // if i just remove right position from here than i am not able to click any button
+            // and bwlow row is not visible why
             child: Row(
               children: [
                 Padding(
@@ -175,18 +182,23 @@ class VideoPickerScreen extends StatelessWidget {
                 ),
 
                 Flexible(
-                  child: LinearProgressIndicator(
-                    minHeight: 8,
-                    value: controller.currentVideoPosition.value / 100,
-                    // scale 0–1
-                    color: Colors.blue,
-                    backgroundColor: Colors.red[200],
+                  child: Slider(
+                    value: currentPosition.inSeconds.toDouble().clamp(
+                      0,
+                      totalDuration.inSeconds.toDouble(),
+                    ),
+                    onChanged: (pos) {
+                      controller.moveVideoToPosition(pos: pos.toInt());
+                    },
+
+                    max: totalDuration.inSeconds.toDouble(),
+                    min: 0,
                   ),
                 ),
               ],
             ),
-          ),
-        ),
+          );
+        }),
 
         // current position
         Positioned(

@@ -10,7 +10,6 @@ enum VideoMovementDirection { forward, backward }
 
 class MyVideoController extends GetxController
     with GetSingleTickerProviderStateMixin {
-  RxDouble currentVideoPosition = 0.0.obs;
   Rx<Duration> videoCurrentPosition = Duration.zero.obs;
 
   late AnimationController animatedIconController;
@@ -35,17 +34,12 @@ class MyVideoController extends GetxController
   }
 
   void initVideoPlayerController({required File galleryVideoFile}) async {
-    myVideoPlayerController?.dispose(); // dispose old controller
+    myVideoPlayerController?.dispose();
 
     myVideoPlayerController = VideoPlayerController.file(galleryVideoFile);
     myVideoPlayerController?.addListener(() {
       final controller = myVideoPlayerController!;
-      if (controller.value.duration > Duration.zero) {
-        currentVideoPosition.value =
-            (controller.value.position.inMilliseconds /
-                controller.value.duration.inMilliseconds) *
-            100;
-      }
+
       videoCurrentPosition.value = controller.value.position;
 
       if (controller.value.position >= controller.value.duration) {
@@ -138,14 +132,18 @@ class MyVideoController extends GetxController
 
   String formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, "0");
+    final hours = duration.inHours;
     final minutes = twoDigits(duration.inMinutes.remainder(60));
     final seconds = twoDigits(duration.inSeconds.remainder(60));
-    return "$minutes:$seconds";
+    return hours > 0 ? "$hours:$minutes:$seconds" : "$minutes:$seconds";
   }
 
+  void moveVideoToPosition({required int pos}) {
+    final controller = myVideoPlayerController;
+    if (controller == null) return;
 
-
-
-
-
+    final maxSeconds = controller.value.duration.inSeconds;
+    final safePos = pos.clamp(0, maxSeconds);
+    controller.seekTo(Duration(seconds: safePos));
+  }
 }
