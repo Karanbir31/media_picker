@@ -6,20 +6,24 @@ import 'package:video_player/video_player.dart';
 
 enum VideoState { playing, paused, completed }
 
+enum VideoMovementDirection { forward, backward }
+
 class MyVideoController extends GetxController
     with GetSingleTickerProviderStateMixin {
-  late AnimationController animatedIconController;
+  RxDouble currentVideoPosition = 0.0.obs;
+  Rx<Duration> videoCurrentPosition = Duration.zero.obs;
 
+  late AnimationController animatedIconController;
   VideoPlayerController? myVideoPlayerController;
+
+  bool hasCompleted = false;
 
   @override
   void onInit() {
-    // TODO: implement onInit
     super.onInit();
-
     animatedIconController = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 500),
     );
   }
 
@@ -31,77 +35,115 @@ class MyVideoController extends GetxController
   }
 
   void initVideoPlayerController({required File galleryVideoFile}) async {
-    debugPrint("myVideoPlayerController called with file path ");
-
-    if (myVideoPlayerController != null) {
-      debugPrint("myVideoPlayerController previous controller dispose ");
-      myVideoPlayerController?.dispose(); // dispose old controller if any
-    }
+    myVideoPlayerController?.dispose(); // dispose old controller
 
     myVideoPlayerController = VideoPlayerController.file(galleryVideoFile);
     myVideoPlayerController?.addListener(() {
-      if (myVideoPlayerController!.value.isCompleted) {
-        animatedIconController.reverse();
+      final controller = myVideoPlayerController!;
+      if (controller.value.duration > Duration.zero) {
+        currentVideoPosition.value =
+            (controller.value.position.inMilliseconds /
+                controller.value.duration.inMilliseconds) *
+            100;
+      }
+      videoCurrentPosition.value = controller.value.position;
 
-        Get.snackbar(
-          "to play again press play button",
-          "message",
-          colorText: CupertinoColors.white,
-
-          backgroundColor: CupertinoColors.black,
-          duration: Duration(seconds: 2),
-          snackPosition: SnackPosition.BOTTOM,
-          maxWidth: Get.width * 0.8,
-          margin: EdgeInsets.only(bottom: 16),
-        );
+      if (controller.value.position >= controller.value.duration) {
+        if (!hasCompleted) {
+          hasCompleted = true;
+          animatedIconController.reverse();
+        }
+      } else {
+        hasCompleted = false;
       }
     });
 
-    await myVideoPlayerController!.initialize().then((_) {
-      debugPrint("myVideoPlayerController after initialize  ");
-      myVideoPlayerController!.play();
-      animatedIconController.forward();
-      update();
-    });
+    await myVideoPlayerController!.initialize();
+    myVideoPlayerController!.play();
+    animatedIconController.forward();
+    update();
+  }
+
+  VideoState get videoState {
+    final controller = myVideoPlayerController;
+    if (controller == null) return VideoState.paused;
+
+    if (controller.value.isPlaying) return VideoState.playing;
+    if (controller.value.position >= controller.value.duration) {
+      return VideoState.completed;
+    }
+    return VideoState.paused;
   }
 
   void playPauseVideo() {
-    if (myVideoPlayerController == null) return;
+    final controller = myVideoPlayerController;
+    if (controller == null) return;
 
-    VideoState state;
-    final controller = myVideoPlayerController!;
-
-    if (controller.value.isPlaying) {
-      state = VideoState.playing;
-    } else if (controller.value.position >= controller.value.duration) {
-      // there are two position controller.position and controller.value.position what is difference
-
-      state = VideoState.completed;
-    } else {
-      state = VideoState.paused;
-    }
-
-    switch (state) {
+    switch (videoState) {
       case VideoState.playing:
-        myVideoPlayerController!.pause();
-        animatedIconController.reverse(); // back to play icon
-
+        debugPrint("myVideoPlayerController video is pause");
+        controller.pause();
+        animatedIconController.reverse();
         break;
       case VideoState.paused:
-        myVideoPlayerController!.play();
-        animatedIconController.forward(); // move to pause icon
-
+        debugPrint("myVideoPlayerController video is play");
+        controller.play();
+        animatedIconController.forward();
         break;
       case VideoState.completed:
-        controller.seekTo(Duration.zero);
-        controller.play();
-
-        animatedIconController.forward(); // move to pause icon
+        debugPrint("myVideoPlayerController video is completed");
+        controller.seekTo(Duration.zero).then((_) => controller.play());
+        animatedIconController.forward();
         break;
     }
-
-    update(); // make sure GetBuilder rebuilds
+    update();
   }
+
+  void moveForwardBackward({
+    required VideoMovementDirection direction,
+    bool autoPlay = true,
+  }) {
+    final controller = myVideoPlayerController;
+    if (controller == null) return;
+
+    Duration targetPosition;
+    if (direction == VideoMovementDirection.forward) {
+      debugPrint("myVideoPlayerController target position plus 5 sec");
+      targetPosition = controller.value.position + const Duration(seconds: 5);
+    } else {
+      debugPrint("myVideoPlayerController target position minus 5 sec");
+      targetPosition = controller.value.position - const Duration(seconds: 5);
+    }
+
+    if (targetPosition < Duration.zero) {
+      debugPrint("myVideoPlayerController target position is less than zero");
+      targetPosition = Duration.zero;
+    } else if (targetPosition > controller.value.duration) {
+      debugPrint(
+        "myVideoPlayerController target position is greater than  video duration",
+      );
+      targetPosition = controller.value.duration;
+    }
+
+    controller.seekTo(targetPosition).then((_) {
+      debugPrint(
+        "myVideoPlayerController change video position to $targetPosition",
+      );
+      if (autoPlay) {
+        controller.play();
+        animatedIconController.forward();
+      }
+    });
+  }
+
+  String formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return "$minutes:$seconds";
+  }
+
+
 
 
 

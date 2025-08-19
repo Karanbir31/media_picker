@@ -85,15 +85,12 @@ class VideoPickerScreen extends StatelessWidget {
                   builder: (_) {
                     return controller.myVideoPlayerController == null
                         ? const Center(child: Text('Sorry nothing selected!!'))
-                        : !controller
-                              .myVideoPlayerController!
-                              .value
-                              .isInitialized
-                        ? const Center(child: CircularProgressIndicator())
                         : myVideoPlayerWidget();
                   },
                 ),
               ),
+
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -102,45 +99,106 @@ class VideoPickerScreen extends StatelessWidget {
   }
 
   Widget myVideoPlayerWidget() {
+    final videoController = controller.myVideoPlayerController;
+
+    if (videoController == null || !videoController.value.isInitialized) {
+      // Prevent aspectRatio=0 crash
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Stack(
       alignment: Alignment.center,
       children: [
         AspectRatio(
-          aspectRatio: controller.myVideoPlayerController!.value.aspectRatio,
-          child: VideoPlayer(controller.myVideoPlayerController!),
+          aspectRatio: videoController.value.aspectRatio,
+          child: VideoPlayer(videoController),
         ),
 
-        IconButton(
-          color: Colors.blueAccent,
-          onPressed: () {
-            controller.playPauseVideo();
-          },
-          icon: GetBuilder<MyVideoController>(
-            builder: (controller) {
-              return AnimatedIcon(
-                size: 48,
+        // play pause button (center)
+        GetBuilder<MyVideoController>(
+          builder: (controller) {
+            return IconButton(
+              color: Colors.blueAccent,
+              iconSize: 48,
+              onPressed: controller.playPauseVideo,
+              icon: AnimatedIcon(
                 icon: AnimatedIcons.play_pause,
                 progress: controller.animatedIconController,
                 color: Colors.white,
-              );
-            },
+              ),
+            );
+          },
+        ),
+
+        // move backward 5 sec
+        Positioned(
+          left: 10,
+          child: IconButton(
+            color: Colors.white,
+            onPressed: () => controller.moveForwardBackward(
+              direction: VideoMovementDirection.backward,
+              autoPlay: true,
+            ),
+            icon: const Icon(Icons.keyboard_double_arrow_left),
           ),
         ),
-        //
-        // Obx(
-        //   () => IconButton(
-        //     color: Colors.red,
-        //     onPressed: () {
-        //       controller.playPauseVideo();
-        //     },
-        //     icon: AnimatedIcon(
-        //       size: 48,
-        //       icon: AnimatedIcons.play_pause,
-        //       progress: controller.animatedIconController,
-        //       color: Colors.white,
-        //     ),
-        //   ),
-        // ),
+
+        // move forward 5 sec
+        Positioned(
+          right: 10,
+          child: IconButton(
+            color: Colors.white,
+            onPressed: () => controller.moveForwardBackward(
+              direction: VideoMovementDirection.forward,
+              autoPlay: true,
+            ),
+            icon: const Icon(Icons.keyboard_double_arrow_right),
+          ),
+        ),
+
+        // progress bar (fix value scaling 0-1)
+        Obx(
+          () => Positioned(
+            bottom: 10,
+            left: 10,
+            right: 10,
+            child: Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    controller.formatDuration(
+                      controller.videoCurrentPosition.value,
+                    ),
+                    style: const TextStyle(fontSize: 16, color: Colors.blue),
+                  ),
+                ),
+
+                Flexible(
+                  child: LinearProgressIndicator(
+                    minHeight: 8,
+                    value: controller.currentVideoPosition.value / 100,
+                    // scale 0–1
+                    color: Colors.blue,
+                    backgroundColor: Colors.red[200],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // current position
+        Positioned(
+          right: 10,
+          top: 10,
+          child: Text(
+            controller.formatDuration(
+              controller.myVideoPlayerController!.value.duration,
+            ),
+            style: const TextStyle(fontSize: 16, color: Colors.blue),
+          ),
+        ),
       ],
     );
   }
