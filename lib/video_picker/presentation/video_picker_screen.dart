@@ -1,9 +1,11 @@
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_video_picker/video_picker/controller/my_video_controller.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoPickerScreen extends StatelessWidget {
@@ -22,6 +24,26 @@ class VideoPickerScreen extends StatelessWidget {
         title: Text("Video picker"),
         backgroundColor: Colors.redAccent,
         foregroundColor: Colors.white,
+
+        actions: [
+          IconButton(
+            onPressed: () async {
+              //controller.saveVideoToDevice
+              controller.saveFilePrivate().then((v) {
+                if (v != null) {
+                  Get.snackbar(
+                    "Saved ",
+                    "video saved",
+                    backgroundColor: CupertinoColors.activeOrange,
+                    colorText: CupertinoColors.white,
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
+                }
+              });
+            },
+            icon: Icon(Icons.file_download_rounded),
+          ),
+        ],
       ),
 
       body: SafeArea(
@@ -84,7 +106,7 @@ class VideoPickerScreen extends StatelessWidget {
                 child: GetBuilder<MyVideoController>(
                   builder: (_) {
                     return controller.myVideoPlayerController == null
-                        ? const Center(child: Text('Sorry nothing selected!!'))
+                        ? Center(child: myShimmerLoadingScreen())
                         : myVideoPlayerWidget();
                   },
                 ),
@@ -101,9 +123,9 @@ class VideoPickerScreen extends StatelessWidget {
   Widget myVideoPlayerWidget() {
     final videoController = controller.myVideoPlayerController;
 
-    if (videoController == null || !videoController.value.isInitialized) {
+    if (!videoController!.value.isInitialized) {
       // Prevent aspectRatio=0 crash
-      return const Center(child: CircularProgressIndicator());
+      return Center(child: myShimmerLoadingScreen());
     }
 
     return Stack(
@@ -256,5 +278,22 @@ class VideoPickerScreen extends StatelessWidget {
         galleryVideoFile: File(pickedFile.path),
       );
     }
+  }
+
+  Widget myShimmerLoadingScreen() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey,
+      highlightColor: Colors.lightBlueAccent,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            title: Container(height: 200, width: 200, color: Colors.white),
+          ),
+
+          ListTile(title: Container(height: 120, color: Colors.white)),
+        ],
+      ),
+    );
   }
 }

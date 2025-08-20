@@ -1,7 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
-import 'package:get/get.dart';
+ import 'package:get/get.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 
 enum VideoState { playing, paused, completed }
@@ -14,6 +15,7 @@ class MyVideoController extends GetxController
 
   late AnimationController animatedIconController;
   VideoPlayerController? myVideoPlayerController;
+  File? _currentFilePath;
 
   RxBool showControls = true.obs;
 
@@ -36,6 +38,8 @@ class MyVideoController extends GetxController
   }
 
   void initVideoPlayerController({required File galleryVideoFile}) async {
+    _currentFilePath = galleryVideoFile;
+
     myVideoPlayerController?.dispose();
 
     myVideoPlayerController = VideoPlayerController.file(galleryVideoFile);
@@ -156,5 +160,71 @@ class MyVideoController extends GetxController
         if (showControls.value) showControls.value = false;
       });
     }
+  }
+/*
+  Future _saveVideoToDevice() async {
+    if (_currentFilePath != null) {
+      try {
+        await GallerySaver.saveVideo(
+          _currentFilePath!.path,
+          albumName: "fluter_image_picker${DateTime.now().millisecond}",
+        );
+        Get.snackbar(
+          "Saved ",
+          "video saved",
+          backgroundColor: CupertinoColors.activeOrange,
+          colorText: CupertinoColors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      } catch (error) {
+        Get.snackbar(
+          "error",
+          "video not saved",
+          backgroundColor: CupertinoColors.activeOrange,
+          colorText: CupertinoColors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    }
+  }*/
+
+  Future<File?> saveFilePrivate({bool toDownloads = true}) async {
+    var currentFile = _currentFilePath;
+    if (currentFile == null) {
+      toast(message: "file not exist");
+      return null;
+    }
+
+    String newPath;
+
+    if (toDownloads) {
+      // 📂 Public Downloads folder (Android only)
+      final downloadsDir = Directory("/storage/emulated/0/Download");
+
+      if (!await downloadsDir.exists()) {
+        await downloadsDir.create(recursive: true);
+      }
+
+      newPath = "${downloadsDir.path}/${currentFile.uri.pathSegments.last}";
+    } else {
+      // 📂 Private app directory
+      final dir = await getApplicationDocumentsDirectory();
+      newPath = '${dir.path}/${currentFile.uri.pathSegments.last}';
+    }
+
+    return currentFile.copy(newPath);
+
+
+  }
+
+
+  toast({message}){
+    Get.snackbar(
+      "error",
+      message??"video not saved",
+      backgroundColor: CupertinoColors.activeOrange,
+      colorText: CupertinoColors.white,
+      snackPosition: SnackPosition.BOTTOM,
+    );
   }
 }

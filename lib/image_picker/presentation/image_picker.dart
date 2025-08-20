@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../video_picker/presentation/video_picker_screen.dart';
 
@@ -28,11 +29,33 @@ class _ImagePickerState extends State<ImagePickerScreen> {
         foregroundColor: Colors.white,
 
         actions: [
-          IconButton(
-            onPressed: () {
-              Get.to(VideoPickerScreen());
-            },
-            icon: Icon(Icons.play_circle_outline),
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: IconButton(
+              onPressed: () {
+                Get.to(VideoPickerScreen());
+              },
+              icon: Icon(Icons.play_circle_outline),
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: IconButton(
+              onPressed: () {
+                if (galleryImageFile != null) {
+                  shareImageFile(
+                    fileToShare: XFile(galleryImageFile!.path),
+                    context: context,
+                  );
+                } else {
+
+                  showSnackBar(msg: "required file path is null call shear text");
+                  sharePlainText();
+                }
+              },
+              icon: Icon(Icons.share),
+            ),
           ),
         ],
       ),
@@ -125,5 +148,64 @@ class _ImagePickerState extends State<ImagePickerScreen> {
         galleryImageFile = File(pickedFile.path);
       });
     }
+  }
+
+  Future<void> shareImageFile({
+    required XFile fileToShare,
+    required BuildContext context,
+  }) async {
+    try{
+
+      final shareParams = ShareParams(
+        title: "file to share ",
+        files: [fileToShare],
+      );
+
+      var result = await SharePlus.instance.share(shareParams);
+
+      if (result.status == ShareResultStatus.success) {
+        showSnackBar(msg: "success");
+      } else {
+        showSnackBar(msg: "unsuccess");
+      }
+    }catch(error){
+      debugPrint("Error in shareImageFile -- $error");
+    }
+  }
+
+  Future<void> sharePlainText() async {
+
+    try{
+
+      final shareParams = ShareParams(
+          title: "file to share ",
+          text: "hello from share plus",
+          subject: "subject form share plus"
+      );
+
+      var result = await SharePlus.instance.share(shareParams);
+
+      if (result.status == ShareResultStatus.success) {
+        showSnackBar(msg: "success");
+      } else {
+        showSnackBar(msg: "unsuccess");
+      }
+    }catch(error){
+      debugPrint("Error in share -- $error");
+    }
+  }
+
+
+
+  void showSnackBar({required String msg}) {
+    Get.snackbar(
+      msg,
+      "",
+      backgroundColor: Colors.black,
+      colorText: Colors.white,
+      duration: Duration(seconds: 2),
+      margin: EdgeInsets.all(16),
+      snackPosition: SnackPosition.BOTTOM,
+    );
   }
 }
